@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Alt Select to Copy with Unlock
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Automatically copy selected text to clipboard when holding Alt key and unlock text selection restrictions
 // @author       MoCongxin
 // @match        *://*/*
@@ -15,6 +15,11 @@
     let styleSheet = null;
     let pressedKey = "Alt";
 
+    function resetAltState() {
+        isAltPressed = false;
+        restoreSelectionRestrictions();
+    }
+
     document.addEventListener('keydown', function(event) {
         if (event.key === pressedKey) {
             isAltPressed = true;
@@ -24,17 +29,20 @@
 
     document.addEventListener('keyup', function(event) {
         if (event.key === pressedKey) {
-            isAltPressed = false;
-            restoreSelectionRestrictions();
+            resetAltState();
         }
     });
 
+    document.addEventListener('blur', resetAltState);
+    document.addEventListener('focus', resetAltState);
+
     document.addEventListener('mouseup', function(event) {
-        if (isAltPressed) {
+        if (isAltPressed && event.altKey) { // 双重检查 Alt 键状态
             let selectedText = window.getSelection().toString();
             if (selectedText) {
                 copyToClipboard(selectedText);
             }
+            setTimeout(resetAltState, 100); // 延时重置状态
         }
     });
 
